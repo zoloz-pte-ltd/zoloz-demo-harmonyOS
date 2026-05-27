@@ -1,0 +1,56 @@
+{
+  "app": {
+    "signingConfigs": [
+      {
+        "name": "default",
+        "type": "HarmonyOS",
+        "material": {
+          "certpath": "/Users/kylin/.ohos/config/default_Demo_jXpJT_-cIME3v5HiWLX16sPGRIvc8LBg8aBLOVbEtJ8=.cer",
+          "keyAlias": "debugKey",
+          "keyPassword": "0000001B38289C6ADD2E549BD139BF42025FC007125173512A4D5405D7B8E4B7EB207C978F4A34BD5C361F",
+          "profile": "/Users/kylin/.ohos/config/default_Demo_jXpJT_-cIME3v5HiWLX16sPGRIvc8LBg8aBLOVbEtJ8=.p7b",
+          "signAlg": "SHA256withECDSA",
+          "storeFile": "/Users/kylin/.ohos/config/default_Demo_jXpJT_-cIME3v5HiWLX16sPGRIvc8LBg8aBLOVbEtJ8=.p12",
+          "storePassword": "0000001BAA1A93A5A16D6DD120DC3F0CA958B4568761B484AFE6EBE1CA90600A55E7CCCC259B470954BA0E"
+        }
+      }
+    ],
+    "products": [
+      {
+        "name": "default",
+        "signingConfig": "default",
+        "targetSdkVersion": "5.0.5(17)",
+        "compatibleSdkVersion": "5.0.5(17)",
+        "runtimeOS": "HarmonyOS",
+        "buildOption": {
+          "strictMode": {
+            "caseSensitiveCheck": true,
+            "useNormalizedOHMUrl": true
+          }
+        }
+      }
+    ],
+    "buildModeSet": [
+      {
+        "name": "debug",
+      },
+      {
+        "name": "release"
+      }
+    ]
+  },
+  "modules": [
+    {
+      "name": "entry",
+      "srcPath": "./entry",
+      "targets": [
+        {
+          "name": "default",
+          "applyToProducts": [
+            "default"
+          ]
+        }
+      ]
+    }
+  ]
+}
