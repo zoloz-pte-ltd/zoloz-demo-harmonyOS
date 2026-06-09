@@ -1,6 +1,6 @@
 import { router } from '@kit.ArkUI';
 import {
-ZolozFacade,
+  ZolozFacade,
   ZolozRequest,
   ZolozBizConfig,
   ZolozResponse,
@@ -27,6 +27,7 @@ export interface ProductConfig{           // 细粒度产品配置（重点！�
   actionRandom?: string;        // 是否随机
   actionFrame?: string[];       // 额外采集帧类型
   docType?:string
+  docUiType?: string            // 证件采集模式: "2"=扫描版(Deep Scan), "1"=手拍版(Self Capture)
 };
 export interface InitializeParams {
   host: string;
@@ -44,10 +45,11 @@ export interface InitializeParams {
 export struct RealIDConfigPage {
 
   // 默认值来自 Java 配置
-  @State hostValue: string = "http://30.172.66.185:8080"; // 可根据环境调整
+  @State hostValue: string = "http://30.96.104.239:8082"; // 可根据环境调整
   @State apiValue: string = "/api/realid/initialize";                  // 对应 /zeta/demo/init 的简化
   @State flowType: string = "REALIDLITE_KYC";                // ← 关键默认值
-  @State docType: string = "00000001003";         // 固定值，不暴露给 UI
+  @State docType: string = "00860000001";         // 固定值，不暴露给 UI
+  @State docUiType: string = "2"; // "2"=扫描版, "1"=手拍版
   private transactionId:string="default transactionId"
 
   private createErrorResponse(
@@ -68,13 +70,16 @@ export struct RealIDConfigPage {
   async initialize(initial: InitializeParams): Promise<InitializeResponse> {
     try {
       const finalMetaInfo:string = ZolozFacade.getMetaInfo()
-console.log("realid page metainfo"+finalMetaInfo)
+      console.log("realid page metainfo"+finalMetaInfo)
       const requestData: InitializeParams = {
         host: this.hostValue,       // 使用表单输入的host
         api: this.apiValue,         // 使用表单输入的API路径
         flowType: this.flowType, // 使用表单输入的flowType
         docType:this.docType,
         metaInfo: finalMetaInfo,
+        productConfig: {
+          docUiType: this.docUiType,
+        },
       };
 
       const httpRequest = http.createHttp();
@@ -103,7 +108,7 @@ console.log("realid page metainfo"+finalMetaInfo)
 
               if (response.result?.resultStatus !== 'S') {
                 console.error('服务端返回失败', response.result);
-               // resolve(this.createErrorResponse('F', 'Server returned failure'));
+                // resolve(this.createErrorResponse('F', 'Server returned failure'));
                 //return;
               }
 
@@ -231,6 +236,31 @@ console.log("realid page metainfo"+finalMetaInfo)
           }
           .width("95%")
           .alignItems(VerticalAlign.Center)
+
+          // 证件采集模式切换
+          Row() {
+            Text("采集模式")
+              .fontSize(16)
+              .width("25%")
+              .textAlign(TextAlign.Start)
+            Row({ space: 12 }) {
+              Text("扫描版")
+                .fontSize(14)
+                .fontColor(this.docUiType === "2" ? Color.Blue : Color.Gray)
+                .onClick(() => { this.docUiType = "2"; })
+              Text("|")
+                .fontSize(14)
+                .fontColor(Color.Gray)
+              Text("手拍版")
+                .fontSize(14)
+                .fontColor(this.docUiType === "1" ? Color.Blue : Color.Gray)
+                .onClick(() => { this.docUiType = "1"; })
+            }
+            .width("70%")
+          }
+          .width("95%")
+          .alignItems(VerticalAlign.Center)
+
           // 开始按钮
           Button("开始 RealID 验证")
             .width("80%")
@@ -243,9 +273,10 @@ console.log("realid page metainfo"+finalMetaInfo)
               const fullUrl = `${this.hostValue}${this.apiValue}`;
               console.log(`请求地址: ${fullUrl}`);
 
-             const init= await this.initialize({ host: this.hostValue, api: this.apiValue, flowType: this.flowType })
+              const init= await this.initialize({ host: this.hostValue, api: this.apiValue, flowType: this.flowType })
               if (init.transactionId) {
-                await this.startZolozAuthentication(init.clientCfg, init.rsaPubKey);
+                const ret = await this.startZolozAuthentication(init.clientCfg, init.rsaPubKey);
+                console.log('ekyc结果：', ret);
               }
             })
         }
