@@ -18,9 +18,9 @@ Before integrating the ZOLOZ HarmonyOS SDK, ensure that your DevEco Studio versi
 
 Manual download and installation
 1. Open the ZOLOZ HarmonyOS repository: https://github.com/zoloz-pte-ltd/zoloz-demo-harmonyOS
-2. Select the desired ZOLOZKit version (it is recommended to use the latest version), and download the corresponding zolozkit.har package.
-3. Drag the downloaded SDK file (.har) into the libs directory of your project.
-4. Manually add the following dependency configuration in the oh-package.json file of the module directory that needs to call ZOLOZKit.
+2. Select the desired ZOLOZKit version (the latest version is recommended), and download the corresponding zolozkit.har package.
+3. Drag the downloaded SDK file (.har) into the `libs` directory of your project.
+4. Add the following dependency configuration in the `oh-package.json5` file of the module that needs to integrate the ZOLOZKit SDK.
 ```json5
 {
     "dependencies": {
@@ -30,13 +30,33 @@ Manual download and installation
 }
 ```
 
-### Step 2: Import and Use SDK
+### Step 2: Verify HAR Integration
+
+After configuring the dependency in `oh-package.json5` and syncing the project, it is recommended to add the following test code to your project. If the `metainfo` string can be obtained successfully, the SDK has been correctly integrated.
+
 ```arkts
-//import zoloz
-import {ZolozFacade,ZolozRequest,ZolozResponse} from "@zoloz/zolozkit"
+// Import ZOLOZ
+import { ZolozFacade } from "@zoloz/zolozkit";
 
-//use
+// Test calling ZolozFacade getMetaInfo
+const metainfo = ZolozFacade.getMetaInfo();
+```
+
+### Step 3: Import and Use SDK
+```arkts
+// Import ZOLOZ
+import { ZolozFacade, ZolozRequest, ZolozResponse, ZLZResponseCode } from "@zoloz/zolozkit";
+
+// Build request
 const request = new ZolozRequest(clientCfg, { rsaPubKey });
-const response= await ZolozFacade.getInstance().startWithRequest(getContext(this),request);
 
+// Start SDK
+const response: ZolozResponse = await ZolozFacade.getInstance().startWithRequest(getContext(this), request);
+
+// Handle result based on response code
+if (response.code === ZLZResponseCode.Interrupt) {
+  // User exited or system interrupted; the SDK has already shown a prompt internally
+} else {
+  // The flow completed normally; call the backend checkResult API to obtain the transaction result (the backend service is the source of truth)
+}
 ```

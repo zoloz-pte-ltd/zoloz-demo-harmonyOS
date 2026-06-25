@@ -5,8 +5,8 @@ struct Index {
   @State message: string = 'Hello World';
 
   build() {
-    RelativeContainer() {
-      Button("实人认证")
+    Column() {
+      Button("RealId")
         .width('80%')
         .height(60)
         .fontWeight(FontWeight.Bold)
@@ -18,6 +18,7 @@ struct Index {
           });
         })
     }
+    .alignItems(HorizontalAlign.Center)
     .height('100%')
     .width('100%')
   }

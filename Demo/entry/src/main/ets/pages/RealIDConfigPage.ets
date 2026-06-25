@@ -1,9 +1,8 @@
-import { router } from '@kit.ArkUI';
 import {
   ZolozFacade,
   ZolozRequest,
   ZolozBizConfig,
-  ZolozResponse,
+  ZolozResponse, ZLZResponseCode,
 } from "zolozkit"
 import { http } from '@kit.NetworkKit';
 export interface HttpHeaders {
@@ -20,14 +19,14 @@ export interface InitializeResponse {
   transactionId: string;
   rsaPubKey: string;
 }
-export interface ProductConfig{           // 细粒度产品配置（重点！）
-  deeperMode?: string;          // AIGC 检测强度
-  livenessMode?: string;        // 活体检测强度
-  actionCheckItems?: string[];  // 动作列表
-  actionRandom?: string;        // 是否随机
-  actionFrame?: string[];       // 额外采集帧类型
+export interface ProductConfig{           // Fine-grained product configuration
+  deeperMode?: string;          // AIGC detection strength
+  livenessMode?: string;        // Liveness detection strength
+  actionCheckItems?: string[];  // Action list
+  actionRandom?: string;        // Whether to randomize
+  actionFrame?: string[];       // Extra capture frame types
   docType?:string
-  docUiType?: string            // 证件采集模式: "2"=扫描版(Deep Scan), "1"=手拍版(Self Capture)
+  docUiType?: string            // Document capture mode: "2"=Deep Scan, "1"=Self Capture
 };
 export interface InitializeParams {
   host: string;
@@ -37,20 +36,18 @@ export interface InitializeParams {
   docType?: string;
   productConfig ?: ProductConfig,
 }
-// export interface InitializeParamsRaw {
-// response:InitializeResponse
-// }
+
 @Entry
 @Component
 export struct RealIDConfigPage {
-
-  // 默认值来自 Java 配置
-  @State hostValue: string = "http://30.96.104.239:8082"; // 可根据环境调整
-  @State apiValue: string = "/api/realid/initialize";                  // 对应 /zeta/demo/init 的简化
-  @State flowType: string = "REALIDLITE_KYC";                // ← 关键默认值
-  @State docType: string = "00860000001";         // 固定值，不暴露给 UI
-  @State docUiType: string = "2"; // "2"=扫描版, "1"=手拍版
-  private transactionId:string="default transactionId"
+  @State hostValue: string = "http://30.96.105.27:8082";
+  @State apiValue: string = "/api/realid/initialize";
+  // Fixed to App SDK integration
+  @State flowType: string = "REALIDLITE_KYC";
+  // Document type
+  @State docType: string = "00860000001";
+  // "2"=Deep Scan, "1"=Self Capture
+  @State docUiType: string = "2";
 
   private createErrorResponse(
     resultStatus: 'F',
@@ -65,16 +62,16 @@ export struct RealIDConfigPage {
     };
   }
   /**
-   * 初始化：仅获取 clientCfg 和 transactionId，不做任何解析
+   * Initialize: fetch clientCfg and transactionId only, no parsing.
    */
   async initialize(initial: InitializeParams): Promise<InitializeResponse> {
     try {
       const finalMetaInfo:string = ZolozFacade.getMetaInfo()
       console.log("realid page metainfo"+finalMetaInfo)
       const requestData: InitializeParams = {
-        host: this.hostValue,       // 使用表单输入的host
-        api: this.apiValue,         // 使用表单输入的API路径
-        flowType: this.flowType, // 使用表单输入的flowType
+        host: this.hostValue,       // Host from form input
+        api: this.apiValue,         // API path from form input
+        flowType: this.flowType, // flowType from form input
         docType:this.docType,
         metaInfo: finalMetaInfo,
         productConfig: {
@@ -96,51 +93,36 @@ export struct RealIDConfigPage {
           },
           (err, data) => {
             if (err) {
-              console.error('ZimInitUtil: HTTP 请求失败', err);
+              console.error('ZimInitUtil: HTTP request failed', err);
               resolve(this.createErrorResponse('F', 'Network error'));
               return;
             }
 
             try {
-              console.info('收到原始响应', data.result);
+              console.info('Received raw response', data.result);
               const response: InitializeResponse = JSON.parse(data.result as string);
-              console.log('解析后的响应:', Object.keys(response));
+              console.log('Parsed response keys:', Object.keys(response));
 
               if (response.result?.resultStatus !== 'S') {
-                console.error('服务端返回失败', response.result);
-                // resolve(this.createErrorResponse('F', 'Server returned failure'));
-                //return;
+                console.error('Server returned failure', response.result);
               }
-
-              // 只取 clientCfg 和 transactionId
-              // if (!response.clientCfg || !response.transactionId) {
-              //   console.error(' 缺少 clientCfg 或 transactionId');
-              //   resolve(this.createErrorResponse('F', 'Missing clientCfg or transactionId'));
-              //   return;
-              // }
-              // const clientCfg = response.clientCfg;
-              // const bizConfig:ZolozBizConfig = {
-              //   rsaPubKey:response.rsaPubKey
-              // };
-              // const request = new ZolozRequest(clientCfg, bizConfig);
-              // const facade = ZolozFacade.getInstance();
-              // const zolozResponse = await facade.startWithRequest(request);
-              resolve(response); // 直接返回原始结构
+              resolve(response); // Return the raw structure directly
             } catch (parseError) {
-              console.error('初始化解析响应失败', parseError);
+              console.error('Failed to parse initialize response', parseError);
               resolve(this.createErrorResponse('F', 'Parse error'));
             }
           }
         );
       });
     } catch (error) {
-      console.error('初始化异常', error);
+      console.error('Initialize exception', error);
       return this.createErrorResponse('F', 'Unexpected error');
     }
   }
   async startZolozAuthentication(clientCfg: string, rsaPubKey: string): Promise<ZolozResponse> {
     const bizConfig:ZolozBizConfig = {
-      rsaPubKey:rsaPubKey
+      rsaPubKey:rsaPubKey,
+      locale: 'en-US'
     };
     const request = new ZolozRequest(clientCfg, bizConfig);
     return await ZolozFacade.getInstance().startWithRequest(getContext(this),request);
@@ -149,7 +131,7 @@ export struct RealIDConfigPage {
     Stack() {
       Scroll() {
         Column({ space: 20 }) {
-          // Host 输入
+          // Host input
           Row() {
             Text("HOST")
               .fontSize(16)
@@ -171,7 +153,7 @@ export struct RealIDConfigPage {
           .width("95%")
           .alignItems(VerticalAlign.Center)
 
-          // API 输入
+          // API input
           Row() {
             Text("API")
               .fontSize(16)
@@ -193,7 +175,7 @@ export struct RealIDConfigPage {
           .width("95%")
           .alignItems(VerticalAlign.Center)
 
-          // FlowType 输入
+          // FlowType input
           Row() {
             Text("FlowType")
               .fontSize(16)
@@ -237,21 +219,21 @@ export struct RealIDConfigPage {
           .width("95%")
           .alignItems(VerticalAlign.Center)
 
-          // 证件采集模式切换
+          // Document capture mode switch
           Row() {
-            Text("采集模式")
+            Text("Capture Mode")
               .fontSize(16)
               .width("25%")
               .textAlign(TextAlign.Start)
             Row({ space: 12 }) {
-              Text("扫描版")
+              Text("Deep Scan")
                 .fontSize(14)
                 .fontColor(this.docUiType === "2" ? Color.Blue : Color.Gray)
                 .onClick(() => { this.docUiType = "2"; })
               Text("|")
                 .fontSize(14)
                 .fontColor(Color.Gray)
-              Text("手拍版")
+              Text("Self Capture")
                 .fontSize(14)
                 .fontColor(this.docUiType === "1" ? Color.Blue : Color.Gray)
                 .onClick(() => { this.docUiType = "1"; })
@@ -261,22 +243,27 @@ export struct RealIDConfigPage {
           .width("95%")
           .alignItems(VerticalAlign.Center)
 
-          // 开始按钮
-          Button("开始 RealID 验证")
+          // Start button
+          Button("Start RealID")
             .width("80%")
             .height(50)
             .margin({ top: 30 })
             .onClick(async() => {
-              console.log(`[RealID] 启动配置:\nHost: ${this.hostValue}\nAPI: ${this.apiValue}\nService: ${this.flowType}\nDocType: ${this.docType}`);
+              console.log(`[RealID] Start config:\nHost: ${this.hostValue}\nAPI: ${this.apiValue}\nService: ${this.flowType}\nDocType: ${this.docType}`);
 
-              // 示例：拼接完整 URL
+              // Build the full URL
               const fullUrl = `${this.hostValue}${this.apiValue}`;
-              console.log(`请求地址: ${fullUrl}`);
+              console.log(`Request URL: ${fullUrl}`);
 
               const init= await this.initialize({ host: this.hostValue, api: this.apiValue, flowType: this.flowType })
               if (init.transactionId) {
-                const ret = await this.startZolozAuthentication(init.clientCfg, init.rsaPubKey);
-                console.log('ekyc结果：', ret);
+                console.log(`transactionId: ${init.transactionId}`)
+                const response = await this.startZolozAuthentication(init.clientCfg, init.rsaPubKey);
+                if (response.code === ZLZResponseCode.Interrupt) {
+                  console.log('User interrupted the verification flow')
+                } else {
+                  console.log('User completed the verification flow')
+                }
               }
             })
         }
