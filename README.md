@@ -36,7 +36,7 @@ After configuring the dependency in `oh-package.json5` and syncing the project, 
 
 ```arkts
 // Import ZOLOZ
-import { ZolozFacade } from "@zoloz/zolozkit";
+import { ZolozFacade } from "zolozkit";
 
 // Test calling ZolozFacade getMetaInfo
 const metainfo = ZolozFacade.getMetaInfo();
@@ -45,7 +45,7 @@ const metainfo = ZolozFacade.getMetaInfo();
 ### Step 3: Import and Use SDK
 ```arkts
 // Import ZOLOZ
-import { ZolozFacade, ZolozRequest, ZolozResponse, ZLZResponseCode } from "@zoloz/zolozkit";
+import { ZolozFacade, ZolozRequest, ZolozResponse, ZLZResponseCode } from "zolozkit";
 
 // Build request
 const request = new ZolozRequest(clientCfg, { rsaPubKey });
