@@ -1,46 +1,54 @@
 import {
-  ZolozFacade,
-  ZolozRequest,
-  ZolozBizConfig,
-  ZolozResponse, ZLZResponseCode,
+  ZolozFacade, ZolozRequest, ZolozBizConfig, ZolozResponse, ZLZResponseCode,
 } from "zolozkit"
 import { http } from '@kit.NetworkKit';
+
 export interface HttpHeaders {
   'Content-Type': string;
 }
+
 export interface ResultInfo {
   resultStatus: 'S' | 'F'; // Success or Fail
   resultCode: string;
   resultMessage: string;
 }
+
 export interface InitializeResponse {
   result: ResultInfo;
   clientCfg: string;
   transactionId: string;
   rsaPubKey: string;
 }
-export interface ProductConfig{           // Fine-grained product configuration
-  deeperMode?: string;          // AIGC detection strength
-  livenessMode?: string;        // Liveness detection strength
-  actionCheckItems?: string[];  // Action list
-  actionRandom?: string;        // Whether to randomize
-  actionFrame?: string[];       // Extra capture frame types
-  docType?:string
-  docUiType?: string            // Document capture mode: "2"=Deep Scan, "1"=Self Capture
-};
+
+export interface ProductConfig { // Fine-grained product configuration
+  deeperMode?: string; // AIGC detection strength
+  livenessMode?: string; // Liveness detection strength
+  actionCheckItems?: string[]; // Action list
+  actionRandom?: string; // Whether to randomize
+  actionFrame?: string[]; // Extra capture frame types
+  docType?: string
+  docUiType?: string // Document capture mode: "2"=Deep Scan, "1"=Self Capture
+
+}
+
+export interface PageConfig { // Fine-grained product configuration
+  urlFaceGuide?: string
+}
+
 export interface InitializeParams {
   host: string;
   api: string;
   metaInfo?: string;
   flowType: string;
   docType?: string;
-  productConfig ?: ProductConfig,
+  productConfig?: ProductConfig,
+  pageConfig?: PageConfig,
 }
 
 @Entry
 @Component
 export struct RealIDConfigPage {
-  @State hostValue: string = "http://30.96.105.27:8082";
+  @State hostValue: string = "http://30.96.104.147:8082";
   @State apiValue: string = "/api/realid/initialize";
   // Fixed to App SDK integration
   @State flowType: string = "REALIDLITE_KYC";
@@ -51,7 +59,7 @@ export struct RealIDConfigPage {
 
   private createErrorResponse(
     resultStatus: 'F',
-    resultMessage: string="error",
+    resultMessage: string = "error",
     resultCode: string = '-1'
   ): InitializeResponse {
     return {
@@ -61,22 +69,27 @@ export struct RealIDConfigPage {
       rsaPubKey: ''
     };
   }
+
   /**
    * Initialize: fetch clientCfg and transactionId only, no parsing.
    */
   async initialize(initial: InitializeParams): Promise<InitializeResponse> {
     try {
-      const finalMetaInfo:string = ZolozFacade.getMetaInfo()
-      console.log("realid page metainfo"+finalMetaInfo)
+      const finalMetaInfo: string = ZolozFacade.getMetaInfo()
+      console.log("realid page metainfo" + finalMetaInfo)
       const requestData: InitializeParams = {
-        host: this.hostValue,       // Host from form input
-        api: this.apiValue,         // API path from form input
+        host: this.hostValue, // Host from form input
+        api: this.apiValue, // API path from form input
         flowType: this.flowType, // flowType from form input
-        docType:this.docType,
+        docType: this.docType,
         metaInfo: finalMetaInfo,
         productConfig: {
           docUiType: this.docUiType,
         },
+        pageConfig: {
+          // Custom face guide page URL - the example uses the HK site URL
+          urlFaceGuide: 'https://hk-production-cdn.zoloz.net/page/realid-lite-fe/faceGuide.html?locale=zh-HK'
+        }
       };
 
       const httpRequest = http.createHttp();
@@ -119,14 +132,19 @@ export struct RealIDConfigPage {
       return this.createErrorResponse('F', 'Unexpected error');
     }
   }
+
   async startZolozAuthentication(clientCfg: string, rsaPubKey: string): Promise<ZolozResponse> {
-    const bizConfig:ZolozBizConfig = {
-      rsaPubKey:rsaPubKey,
-      locale: 'en-US'
+    const bizConfig: ZolozBizConfig = {
+      rsaPubKey: rsaPubKey,
+      // Language setting
+      locale: 'en-US',
+      // Chameleon UI config - path of the chameleon config file under resources/rawfile
+      chameleonConfig: "config_realId_native.zip",
     };
     const request = new ZolozRequest(clientCfg, bizConfig);
-    return await ZolozFacade.getInstance().startWithRequest(getContext(this),request);
+    return await ZolozFacade.getInstance().startWithRequest(getContext(this), request);
   }
+
   build() {
     Stack() {
       Scroll() {
@@ -229,14 +247,18 @@ export struct RealIDConfigPage {
               Text("Deep Scan")
                 .fontSize(14)
                 .fontColor(this.docUiType === "2" ? Color.Blue : Color.Gray)
-                .onClick(() => { this.docUiType = "2"; })
+                .onClick(() => {
+                  this.docUiType = "2";
+                })
               Text("|")
                 .fontSize(14)
                 .fontColor(Color.Gray)
               Text("Self Capture")
                 .fontSize(14)
                 .fontColor(this.docUiType === "1" ? Color.Blue : Color.Gray)
-                .onClick(() => { this.docUiType = "1"; })
+                .onClick(() => {
+                  this.docUiType = "1";
+                })
             }
             .width("70%")
           }
@@ -248,14 +270,15 @@ export struct RealIDConfigPage {
             .width("80%")
             .height(50)
             .margin({ top: 30 })
-            .onClick(async() => {
-              console.log(`[RealID] Start config:\nHost: ${this.hostValue}\nAPI: ${this.apiValue}\nService: ${this.flowType}\nDocType: ${this.docType}`);
+            .onClick(async () => {
+              console.log(
+                `[RealID] Start config:\nHost: ${this.hostValue}\nAPI: ${this.apiValue}\nService: ${this.flowType}\nDocType: ${this.docType}`);
 
               // Build the full URL
               const fullUrl = `${this.hostValue}${this.apiValue}`;
               console.log(`Request URL: ${fullUrl}`);
 
-              const init= await this.initialize({ host: this.hostValue, api: this.apiValue, flowType: this.flowType })
+              const init = await this.initialize({ host: this.hostValue, api: this.apiValue, flowType: this.flowType })
               if (init.transactionId) {
                 console.log(`transactionId: ${init.transactionId}`)
                 const response = await this.startZolozAuthentication(init.clientCfg, init.rsaPubKey);
@@ -274,6 +297,5 @@ export struct RealIDConfigPage {
     .width('100%')
     .height('100%')
   }
-
 }
 
