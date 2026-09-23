@@ -17,6 +17,42 @@ struct Index {
             url: 'pages/RealIDConfigPage'
           });
         })
+
+      Button("FaceCapture")
+        .width('80%')
+        .height(60)
+        .fontWeight(FontWeight.Bold)
+        .fontSize(20)
+        .margin({ top: 20 })
+        .onClick(() => {
+          router.pushUrl({
+            url: 'pages/FaceCaptureConfigPage'
+          });
+        })
+
+      Button("IDR")
+        .width('80%')
+        .height(60)
+        .fontWeight(FontWeight.Bold)
+        .fontSize(20)
+        .margin({ top: 20 })
+        .onClick(() => {
+          router.pushUrl({
+            url: 'pages/IDRConfigPage'
+          });
+        })
+
+      Button("Connect")
+        .width('80%')
+        .height(60)
+        .fontWeight(FontWeight.Bold)
+        .fontSize(20)
+        .margin({ top: 20 })
+        .onClick(() => {
+          router.pushUrl({
+            url: 'pages/ConnectConfigPage'
+          });
+        })
     }
     .alignItems(HorizontalAlign.Center)
     .height('100%')

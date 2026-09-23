@@ -1,6 +1,9 @@
 {
   "src": [
     "pages/Index",
-    "pages/RealIDConfigPage"
+    "pages/RealIDConfigPage",
+    "pages/FaceCaptureConfigPage",
+    "pages/IDRConfigPage",
+    "pages/ConnectConfigPage"
   ]
 }
