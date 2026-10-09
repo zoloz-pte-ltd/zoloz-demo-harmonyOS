@@ -10,7 +10,7 @@ This repository provides an example to help customers integrate the ZOLOZ SDK wi
 
 ### Prerequisites
 
-Before integrating the ZOLOZ HarmonyOS SDK, ensure that your DevEco Studio version is **5.0.5 or later**.
+Before integrating the ZOLOZ HarmonyOS SDK, ensure that your DevEco Studio version is **5.0.5 or later**. The minimum HarmonyOS version supported by the SDK is **5.0.0 (API 12)**.
 
 ## SDK Integration
 
